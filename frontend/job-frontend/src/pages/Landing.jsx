@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiOutlineUserGroup, HiOutlineBuildingOffice2, HiChevronRight } from 'react-icons/hi2';
 import { useTheme } from '../context/ThemeContext';
+import ChatBot from '../components/ChatBot';
 
 const reviews = [
     { name: 'Sarah J.', role: 'Computer Science Graduate', text: 'SkillSync helped me land my dream job in weeks! The AI-matching is incredibly accurate.', stars: 5 },
@@ -15,7 +15,6 @@ const reviews = [
 export default function Landing() {
     const navigate = useNavigate();
     const { theme, toggleTheme } = useTheme();
-    const [chatOpen, setChatOpen] = useState(false);
     const isDark = theme === 'dark';
 
     return (
@@ -250,79 +249,8 @@ export default function Landing() {
                 By continuing, you agree to our <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>Terms</span> and <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>Privacy Policy</span>.
             </div>
 
-            {/* ── CHATBOT FAB (bottom-right) ── */}
-            <div style={{ position: 'fixed', bottom: 28, right: 28, zIndex: 99999 }}>
-                <div className="pulse-ring" />
-                <button onClick={() => setChatOpen(!chatOpen)} className="chatbot-fab" style={{
-                    position: 'relative', width: 56, height: 56, borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #3B82F6, #6366F1)',
-                    border: 'none', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: '0 6px 24px rgba(59,130,246,0.35)',
-                    color: '#fff',
-                }}>
-                    {chatOpen ? (
-                        <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round">
-                            <line x1={18} y1={6} x2={6} y2={18} /><line x1={6} y1={6} x2={18} y2={18} />
-                        </svg>
-                    ) : (
-                        <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-                            <circle cx={9} cy={10} r={1} fill="#fff" stroke="none" />
-                            <circle cx={12} cy={10} r={1} fill="#fff" stroke="none" />
-                            <circle cx={15} cy={10} r={1} fill="#fff" stroke="none" />
-                        </svg>
-                    )}
-                </button>
-
-                {/* Chat popup */}
-                {chatOpen && (
-                    <div style={{
-                        position: 'absolute', bottom: 72, right: 0,
-                        width: 340, borderRadius: 'var(--radius-lg)',
-                        background: 'var(--bg-surface)', border: '1px solid var(--border-default)',
-                        boxShadow: '0 16px 48px rgba(0,0,0,0.25)',
-                        overflow: 'hidden',
-                        animation: 'chatBounce 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both',
-                    }}>
-                        <div style={{
-                            padding: '18px 20px', borderBottom: '1px solid var(--border-default)',
-                            background: 'linear-gradient(135deg, #3B82F6, #6366F1)',
-                        }}>
-                            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#fff' }}>SkillSync AI Assistant</div>
-                            <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>Ask me anything about opportunities</div>
-                        </div>
-                        <div style={{ padding: '20px' }}>
-                            <div style={{
-                                padding: '14px 16px', borderRadius: 'var(--radius-md)',
-                                background: 'var(--bg-elevated)', fontSize: '0.85rem',
-                                color: 'var(--text-secondary)', lineHeight: 1.5,
-                            }}>
-                                👋 Hi there! I'm your SkillSync assistant. How can I help you today?
-                            </div>
-                        </div>
-                        <div style={{ padding: '12px 20px 20px', display: 'flex', gap: 8 }}>
-                            <input placeholder="Type a message..." style={{
-                                flex: 1, padding: '10px 14px', borderRadius: 'var(--radius-md)',
-                                background: 'var(--bg-elevated)', border: '1px solid var(--border-default)',
-                                color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none',
-                                fontFamily: 'var(--font-sans)',
-                            }} />
-                            <button style={{
-                                width: 38, height: 38, borderRadius: 'var(--radius-md)',
-                                background: 'linear-gradient(135deg, #3B82F6, #6366F1)',
-                                border: 'none', cursor: 'pointer',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            }}>
-                                <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5}>
-                                    <line x1={22} y1={2} x2={11} y2={13} />
-                                    <polygon points="22 2 15 22 11 13 2 9 22 2" fill="none" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </div>
+            {/* ── CHATBOT (bottom-right) ── */}
+            <ChatBot />
         </div>
     );
 }
