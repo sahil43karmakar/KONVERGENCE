@@ -18,8 +18,9 @@ export default function Landing() {
     const isDark = theme === 'dark';
 
     return (
-        <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', overflow: 'hidden' }}>
-            {/* CSS for animations */}
+        <div style={{ minHeight: '100vh', background: isDark ? '#000' : '#F8FAFC', overflow: 'hidden', position: 'relative' }}>
+
+
             <style>{`
                 @keyframes floatUp {
                     0% { transform: translateY(0px); }
