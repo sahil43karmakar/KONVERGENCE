@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { uploadResume, uploadPhoto } from '../api/mockApi';
 import { HiXMark, HiOutlineDocumentArrowUp, HiOutlineCheckCircle, HiCamera, HiOutlineMapPin, HiPlus, HiOutlineBuildingOffice2, HiOutlineGlobeAlt } from 'react-icons/hi2';
 import { allSkills } from '../data/mockData';
 import toast from 'react-hot-toast';
@@ -36,6 +37,7 @@ export default function Profile() {
 function StudentForm({ onSuccess }) {
     const { user, updateProfile } = useAuth();
     const fileRef = useRef(null);
+    const resumeRef = useRef(null);
 
     const [firstName, setFirstName] = useState(user?.firstName || user?.name?.split(' ')[0] || '');
     const [middleName, setMiddleName] = useState(user?.middleName || '');
@@ -53,19 +55,50 @@ function StudentForm({ onSuccess }) {
     };
     const removeSkill = (s) => setSkills(skills.filter(sk => sk !== s));
 
-    const handlePhotoChange = (e) => {
+    const handlePhotoChange = async (e) => {
         const file = e.target.files?.[0];
         if (file) {
             if (file.size > 2 * 1024 * 1024) { toast.error('Max file size is 2MB'); return; }
+            // Show local preview immediately
             const reader = new FileReader();
             reader.onloadend = () => setPhotoPreview(reader.result);
             reader.readAsDataURL(file);
+            // Upload to Cloudinary
+            try {
+                const data = await uploadPhoto(file);
+                if (data?.photoUrl) {
+                    setPhotoPreview(data.photoUrl);
+                    toast.success('Photo uploaded!');
+                }
+            } catch (err) {
+                toast.error(err?.response?.data?.message || 'Photo upload failed — will save locally');
+            }
         }
     };
 
-    const handleResumeUpload = () => {
-        updateProfile({ resumeUrl: 'https://res.cloudinary.com/demo/resume.pdf' });
-        toast.success('Resume uploaded!');
+    const handleResumeUpload = async () => {
+        // Trigger hidden file input
+        resumeRef.current?.click();
+    };
+
+    const handleResumeFileChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) { toast.error('Max file size is 5MB'); return; }
+        const allowed = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+        if (!allowed.includes(file.type)) { toast.error('Only PDF or DOCX files'); return; }
+        try {
+            toast.loading('Uploading resume...');
+            const data = await uploadResume(file);
+            toast.dismiss();
+            if (data?.resumeUrl) {
+                await updateProfile({ resumeUrl: data.resumeUrl });
+                toast.success('Resume uploaded!');
+            }
+        } catch (err) {
+            toast.dismiss();
+            toast.error(err?.response?.data?.message || 'Resume upload failed');
+        }
     };
 
     const handleSave = () => {
@@ -99,10 +132,11 @@ function StudentForm({ onSuccess }) {
             {/* Resume */}
             <Section>
                 <FieldLabel>Resume Sync</FieldLabel>
+                <input ref={resumeRef} type="file" accept=".pdf,.doc,.docx" onChange={handleResumeFileChange} style={{ display: 'none' }} />
                 {user?.resumeUrl ? (
                     <UploadedState onRemove={() => updateProfile({ resumeUrl: '' })} label="Resume uploaded" />
                 ) : (
-                    <DropZone onClick={handleResumeUpload} icon={<HiOutlineDocumentArrowUp size={32} />} title="Drag & drop your resume" subtitle="PDF, DOCX up to 5MB" />
+                    <DropZone onClick={handleResumeUpload} icon={<HiOutlineDocumentArrowUp size={32} />} title="Click to upload your resume" subtitle="PDF, DOCX up to 5MB" />
                 )}
             </Section>
 

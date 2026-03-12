@@ -9,7 +9,7 @@ export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const { login } = useAuth();
+    const { login, loginWithGoogle } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -18,10 +18,11 @@ export default function Login() {
         setLoading(true);
         try {
             await login(email, password, role);
-            toast.success('Welcome back!');
+            toast.success('🎉 Login Successful!', { duration: 3000, style: { background: '#10B981', color: '#fff', fontWeight: 600 } });
             navigate(role === 'admin' ? '/admin' : '/jobs');
-        } catch {
-            toast.error('Login failed');
+        } catch (err) {
+            const msg = err?.response?.data?.message || err?.message || 'Login failed';
+            toast.error(msg);
         } finally {
             setLoading(false);
         }
@@ -75,7 +76,7 @@ export default function Login() {
                 </p>
 
                 {/* Google Button */}
-                <button style={{
+                <button onClick={loginWithGoogle} type="button" style={{
                     width: '100%', padding: '13px', borderRadius: 'var(--radius-md)',
                     background: 'var(--bg-elevated)', border: '1px solid var(--border-default)',
                     color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: 600,
@@ -111,7 +112,7 @@ export default function Login() {
                     <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                             <label style={labelStyle}>Password</label>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--accent-primary)', fontWeight: 600, cursor: 'pointer' }}>Forgot?</span>
+                            <Link to="/forgot-password" style={{ fontSize: '0.75rem', color: 'var(--accent-primary)', fontWeight: 600, textDecoration: 'none' }}>Forgot?</Link>
                         </div>
                         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
                             placeholder="••••••••" style={inputStyle}

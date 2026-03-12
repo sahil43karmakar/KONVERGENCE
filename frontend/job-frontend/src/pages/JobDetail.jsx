@@ -19,7 +19,7 @@ export default function JobDetail() {
     useEffect(() => {
         fetchJobById(id).then(j => { setJob(j); setLoading(false); });
         checkBookmark(id).then(setBookmarked);
-        setApplied(hasApplied(id));
+        hasApplied(id).then(setApplied);
     }, [id]);
 
     if (loading) return (
@@ -32,7 +32,7 @@ export default function JobDetail() {
         </div>
     );
 
-    const matchData = user?.skills?.length > 0 ? calcSkillMatch(user.skills, job.skillsRequired) : null;
+    const matchData = user?.skills?.length > 0 ? calcSkillMatch(user.skills, job.skillsRequired || []) : null;
     const daysLeft = Math.ceil((new Date(job.deadline) - new Date()) / (1000 * 60 * 60 * 24));
     const isExpired = daysLeft < 0;
     const isUrgent = daysLeft >= 0 && daysLeft <= 3;

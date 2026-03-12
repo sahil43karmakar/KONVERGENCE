@@ -1,227 +1,182 @@
-/* ── Mock API Service Layer ──
-   Persists state in localStorage. When backend is ready, swap these for Axios calls. */
+/* ── Real API Service Layer ──────────────────────────────────────────
+   Replaces the mock data layer. Every function matches the same
+   signature so pages import the same names with zero changes.       */
 
-import { mockJobs, defaultApplications, defaultBookmarks } from '../data/mockData';
-import { calcSkillMatch, calcOpportunityScore } from '../utils/intelligence';
-
-const BOOKMARKS_KEY = 'skillsync-bookmarks';
-const APPS_KEY = 'skillsync-applications';
-
-// Helpers
-function getBookmarks() {
-    const stored = localStorage.getItem(BOOKMARKS_KEY);
-    return stored ? JSON.parse(stored) : [...defaultBookmarks];
-}
-function saveBookmarks(bookmarks) {
-    localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bookmarks));
-}
-function getApplications() {
-    const stored = localStorage.getItem(APPS_KEY);
-    return stored ? JSON.parse(stored) : [...defaultApplications];
-}
-function saveApplications(apps) {
-    localStorage.setItem(APPS_KEY, JSON.stringify(apps));
-}
-
-// Simulate async delay
-const delay = (ms = 300) => new Promise(r => setTimeout(r, ms));
+import api from './api';
 
 /* ── Job Endpoints ── */
 
 export async function fetchJobs(filters = {}) {
-    await delay();
-    let results = [...mockJobs];
+    const params = {};
+    if (filters.search) params.search = filters.search;
+    if (filters.location) params.location = filters.location;
+    if (filters.type) params.type = filters.type;
+    if (filters.skills?.length) params.skills = filters.skills.join(',');
+    if (filters.salaryMin) params.salaryMin = filters.salaryMin;
+    if (filters.salaryMax) params.salaryMax = filters.salaryMax;
+    if (filters.deadlineBefore) params.deadlineBefore = filters.deadlineBefore;
+    if (filters.sortBy) params.sortBy = filters.sortBy;
+    if (filters.page) params.page = filters.page;
+    if (filters.limit) params.limit = filters.limit;
 
-    // Keyword search (company or role)
-    if (filters.search) {
-        const q = filters.search.toLowerCase();
-        results = results.filter(j =>
-            j.company.toLowerCase().includes(q) || j.role.toLowerCase().includes(q)
-        );
-    }
-
-    // Location filter
-    if (filters.location) {
-        results = results.filter(j => j.location === filters.location);
-    }
-
-    // Type filter
-    if (filters.type) {
-        results = results.filter(j => j.type === filters.type);
-    }
-
-    // Skills filter ($in logic)
-    if (filters.skills && filters.skills.length > 0) {
-        results = results.filter(j =>
-            filters.skills.some(s => j.skillsRequired.map(sk => sk.toLowerCase()).includes(s.toLowerCase()))
-        );
-    }
-
-    // Salary range
-    if (filters.salaryMin) {
-        results = results.filter(j => j.salary >= Number(filters.salaryMin));
-    }
-    if (filters.salaryMax) {
-        results = results.filter(j => j.salary <= Number(filters.salaryMax));
-    }
-
-    // Deadline filter (only show jobs with deadline after given date)
-    if (filters.deadlineBefore) {
-        results = results.filter(j => new Date(j.deadline) <= new Date(filters.deadlineBefore));
-    }
-
-    // Sorting
-    if (filters.sortBy === 'newest') {
-        results.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    } else if (filters.sortBy === 'salary') {
-        results.sort((a, b) => b.salary - a.salary);
-    } else if (filters.sortBy === 'deadline') {
-        results.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
-    }
-
-    // Pagination
-    const page = filters.page || 1;
-    const limit = filters.limit || 6;
-    const total = results.length;
-    const totalPages = Math.ceil(total / limit);
-    const paginated = results.slice((page - 1) * limit, page * limit);
-
-    return { jobs: paginated, total, totalPages, currentPage: page };
+    const { data } = await api.get('/jobs', { params });
+    // Normalise _id → id for frontend compatibility
+    const jobs = (data.jobs || []).map(j => ({ ...j, id: j._id || j.id }));
+    return { jobs, total: data.total, totalPages: data.totalPages, currentPage: data.currentPage };
 }
 
 export async function fetchJobById(id) {
-    await delay(200);
-    return mockJobs.find(j => j.id === id) || null;
+    const { data } = await api.get(`/jobs/${id}`);
+    const job = data.data || data;
+    return job ? { ...job, id: job._id || job.id } : null;
 }
 
 /* ── Bookmark Endpoints ── */
 
 export async function fetchBookmarks() {
-    await delay(200);
-    const ids = getBookmarks();
-    return mockJobs.filter(j => ids.includes(j.id));
+    const { data } = await api.get('/bookmarks');
+    return (data.data || []).map(b => {
+        const job = b.job || b;
+        return { ...job, id: job._id || job.id };
+    });
 }
 
 export async function toggleBookmark(jobId) {
-    await delay(100);
-    const bookmarks = getBookmarks();
-    const idx = bookmarks.indexOf(jobId);
-    if (idx > -1) {
-        bookmarks.splice(idx, 1);
-    } else {
-        bookmarks.push(jobId);
-    }
-    saveBookmarks(bookmarks);
-    return bookmarks;
+    const { data } = await api.post(`/bookmarks/${jobId}`);
+    return data.bookmarkIds || [];
 }
 
 export async function isBookmarked(jobId) {
-    const bookmarks = getBookmarks();
-    return bookmarks.includes(jobId);
+    const ids = await getBookmarkIds();
+    return ids.includes(jobId);
 }
 
-export function getBookmarkIds() {
-    return getBookmarks();
+export async function getBookmarkIds() {
+    try {
+        const { data } = await api.get('/bookmarks/ids');
+        return data.data || [];
+    } catch {
+        return [];
+    }
 }
 
 /* ── Application Endpoints ── */
 
 export async function fetchApplications() {
-    await delay(200);
-    const apps = getApplications();
-    return apps.map(app => {
-        const job = mockJobs.find(j => j.id === app.jobId);
-        return { ...app, job };
-    });
+    const { data } = await api.get('/applications');
+    return (data.data || []).map(app => ({
+        id: app._id || app.id,
+        jobId: app.job?._id || app.job?.id || app.job,
+        status: app.status,
+        appliedAt: app.appliedAt,
+        job: app.job ? { ...app.job, id: app.job._id || app.job.id } : null,
+    }));
 }
 
 export async function applyToJob(jobId) {
-    await delay(200);
-    const apps = getApplications();
-    if (apps.find(a => a.jobId === jobId)) {
-        throw new Error('Already applied to this job');
-    }
-    const newApp = {
-        id: 'a' + Date.now(),
-        jobId,
-        status: 'applied',
-        appliedAt: new Date().toISOString().split('T')[0]
+    const { data } = await api.post(`/applications/${jobId}/apply`);
+    const app = data.data;
+    return {
+        id: app._id || app.id,
+        jobId: app.job || jobId,
+        status: app.status,
+        appliedAt: app.appliedAt,
     };
-    apps.push(newApp);
-    saveApplications(apps);
-    return newApp;
 }
 
 export async function updateApplicationStatus(appId, status) {
-    await delay(100);
-    const apps = getApplications();
-    const app = apps.find(a => a.id === appId);
-    if (app) {
-        app.status = status;
-        saveApplications(apps);
-    }
-    return app;
+    const { data } = await api.patch(`/applications/${appId}/status`, { status });
+    const app = data.data;
+    return app ? { id: app._id || app.id, status: app.status } : null;
 }
 
 export async function removeApplication(appId) {
-    await delay(100);
-    const apps = getApplications();
-    const filtered = apps.filter(a => a.id !== appId);
-    saveApplications(filtered);
-    return filtered;
+    await api.delete(`/applications/${appId}`);
+    return [];
 }
 
-export function hasApplied(jobId) {
-    const apps = getApplications();
-    return apps.some(a => a.jobId === jobId);
+export async function hasApplied(jobId) {
+    try {
+        const { data } = await api.get(`/applications/${jobId}/check`);
+        return data.applied;
+    } catch {
+        return false;
+    }
 }
 
 /* ── Personalized Feed ── */
 
 export async function fetchPersonalizedFeed(userSkills = []) {
-    await delay(300);
-    const now = new Date();
-    const activeJobs = mockJobs.filter(j => new Date(j.deadline) > now);
-
-    const scored = activeJobs.map(job => ({
-        ...job,
-        ...calcSkillMatch(userSkills, job.skillsRequired),
-        opportunityScore: calcOpportunityScore(job, userSkills)
-    }));
-
-    scored.sort((a, b) => b.opportunityScore - a.opportunityScore);
-    return scored.slice(0, 5);
+    try {
+        const { data } = await api.get('/jobs/personalized');
+        return (data.data || []).map(item => {
+            // Backend returns { job: {...}, matchPercentage, matchedSkills, missingSkills, opportunityScore }
+            // Flatten so the job fields are top-level (what JobCard expects)
+            const job = item.job || item;
+            return {
+                ...job,
+                id: job._id || job.id,
+                matchPercentage: item.matchPercentage,
+                matchedSkills: item.matchedSkills || [],
+                missingSkills: item.missingSkills || [],
+                opportunityScore: item.opportunityScore,
+            };
+        });
+    } catch {
+        // Fallback: return first 5 jobs
+        const result = await fetchJobs({ limit: 5, sortBy: 'newest' });
+        return result.jobs;
+    }
 }
 
 /* ── Admin Stats ── */
 
 export async function fetchAdminStats() {
-    await delay(300);
-    const apps = getApplications();
-    const now = new Date();
-
-    // Count applications per job
-    const appCounts = {};
-    apps.forEach(a => { appCounts[a.jobId] = (appCounts[a.jobId] || 0) + 1; });
-
-    let mostAppliedJobId = null;
-    let maxApps = 0;
-    Object.entries(appCounts).forEach(([jobId, count]) => {
-        if (count > maxApps) { mostAppliedJobId = jobId; maxApps = count; }
-    });
-
-    const mostAppliedJob = mockJobs.find(j => j.id === mostAppliedJobId);
-    const activeJobs = mockJobs.filter(j => new Date(j.deadline) > now).length;
-    const expiredJobs = mockJobs.filter(j => new Date(j.deadline) <= now).length;
-
-    return {
-        totalUsers: 156,
-        totalApplications: apps.length,
-        totalJobs: mockJobs.length,
-        activeJobs,
-        expiredJobs,
-        mostAppliedJob: mostAppliedJob ? { ...mostAppliedJob, applicationCount: maxApps } : null
-    };
+    const { data } = await api.get('/admin/stats');
+    const stats = data.data;
+    if (stats.mostAppliedJob) {
+        stats.mostAppliedJob = { ...stats.mostAppliedJob, id: stats.mostAppliedJob._id || stats.mostAppliedJob.id };
+    }
+    return stats;
 }
 
-export { mockJobs };
+/* ── Admin Job CRUD ── */
+
+export async function createJob(jobData) {
+    const { data } = await api.post('/jobs', jobData);
+    const job = data.data;
+    return { ...job, id: job._id || job.id };
+}
+
+export async function updateJob(id, jobData) {
+    const { data } = await api.put(`/jobs/${id}`, jobData);
+    const job = data.data;
+    return { ...job, id: job._id || job.id };
+}
+
+export async function deleteJob(id) {
+    await api.delete(`/jobs/${id}`);
+}
+
+/* ── File Uploads ── */
+
+export async function uploadResume(file) {
+    const formData = new FormData();
+    formData.append('resume', file);
+    const { data } = await api.post('/upload/resume', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data.data;
+}
+
+export async function uploadPhoto(file) {
+    const formData = new FormData();
+    formData.append('photo', file);
+    const { data } = await api.post('/upload/photo', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data.data;
+}
+
+/* ── Backward compat: re-export empty mockJobs (some pages import it) ── */
+export const mockJobs = [];

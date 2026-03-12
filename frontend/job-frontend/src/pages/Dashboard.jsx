@@ -93,7 +93,7 @@ export default function Dashboard() {
                                 {trend.direction === 'up' ? <HiArrowTrendingUp size={16} style={{ color: trend.color }} /> : <HiArrowTrendingDown size={16} style={{ color: trend.color }} />}
                                 <span style={{ color: trend.color, fontWeight: 600 }}>{trend.value} this week</span>
                             </div>
-                            <MetricRow label="Avg Match" value={`${bookmarks.length > 0 ? Math.round(bookmarks.reduce((s, j) => s + calcSkillMatch(user?.skills || [], j.skillsRequired).matchPercentage, 0) / bookmarks.length) : 0}%`} />
+                            <MetricRow label="Avg Match" value={`${bookmarks.length > 0 ? Math.round(bookmarks.reduce((s, j) => s + calcSkillMatch(user?.skills || [], j.skillsRequired || []).matchPercentage, 0) / bookmarks.length) : 0}%`} />
                             <MetricRow label="Applications" value={applications.length} />
                             <MetricRow label="Interviews" value={applications.filter(a => a.status === 'interview' || a.status === 'selected').length} />
                             <MetricRow label="Resume" value={user?.resumeUrl ? 'Uploaded' : 'Missing'} highlight={!user?.resumeUrl} />

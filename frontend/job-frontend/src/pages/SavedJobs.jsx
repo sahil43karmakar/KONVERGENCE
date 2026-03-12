@@ -52,7 +52,7 @@ export default function SavedJobs() {
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     {jobs.map(job => (
                         <JobCard key={job.id} job={job}
-                            matchData={user?.skills?.length ? calcSkillMatch(user.skills, job.skillsRequired) : null}
+                            matchData={user?.skills?.length ? calcSkillMatch(user.skills, job.skillsRequired || []) : null}
                             isBookmarked={true} onToggleBookmark={handleToggle}
                         />
                     ))}

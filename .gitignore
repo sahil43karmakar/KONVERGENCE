@@ -1,3 +1,9 @@
 node_modules/
+node_modules
 .env
 *.log
+dist
+build
+.DS_Store
+Backend/frontend
+Backend/ml-service

@@ -10,7 +10,7 @@ export default function Register() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const { register } = useAuth();
+    const { register, loginWithGoogle } = useAuth();
     const navigate = useNavigate();
 
     const isRecruiter = role === 'admin';
@@ -24,10 +24,11 @@ export default function Register() {
         setLoading(true);
         try {
             await register({ name, email, password, role, skills: [] });
-            toast.success('Account created!');
+            toast.success('🎉 Signup Successful! Welcome to SkillSync', { duration: 3000, style: { background: '#10B981', color: '#fff', fontWeight: 600 } });
             navigate(isRecruiter ? '/admin' : '/jobs');
-        } catch {
-            toast.error('Registration failed');
+        } catch (err) {
+            const msg = err?.response?.data?.message || err?.message || 'Registration failed';
+            toast.error(msg);
         } finally {
             setLoading(false);
         }
@@ -78,7 +79,7 @@ export default function Register() {
                 </p>
 
                 {/* Google Button */}
-                <button style={{
+                <button onClick={loginWithGoogle} type="button" style={{
                     width: '100%', padding: '13px', borderRadius: 'var(--radius-md)',
                     background: 'var(--bg-elevated)', border: '1px solid var(--border-default)',
                     color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: 600,

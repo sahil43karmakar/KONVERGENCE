@@ -41,7 +41,7 @@ export default function Jobs() {
         fetchJobs(filters).then(r => { setResult(r); setLoading(false); });
     }, [filters]);
 
-    useEffect(() => { setBookmarkIds(getBookmarkIds()); }, []);
+    useEffect(() => { getBookmarkIds().then(ids => setBookmarkIds(ids || [])); }, []);
 
     useEffect(() => {
         if (user?.skills?.length > 0) {
@@ -53,7 +53,7 @@ export default function Jobs() {
         if (!user?.skills?.length) return result.jobs.map(j => ({ job: j, matchData: null }));
         return result.jobs.map(job => ({
             job,
-            matchData: calcSkillMatch(user.skills, job.skillsRequired),
+            matchData: calcSkillMatch(user.skills, job.skillsRequired || []),
         }));
     }, [result.jobs, user?.skills]);
 
