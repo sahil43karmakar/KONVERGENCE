@@ -100,14 +100,21 @@ export default function Layout() {
                         borderRadius: 'var(--radius-md)',
                         background: 'var(--bg-card)', border: '1px solid var(--border-subtle)',
                     }}>
-                        <div style={{
-                            width: 36, height: 36, borderRadius: 'var(--radius-full)',
-                            background: 'linear-gradient(135deg, var(--accent-primary), #6366F1)',
-                            color: '#fff', fontWeight: 700, fontSize: '0.875rem',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>
-                            {user?.name?.charAt(0) || 'U'}
-                        </div>
+                        {user?.photoUrl ? (
+                            <img src={user.photoUrl} alt={user.name} style={{
+                                width: 36, height: 36, borderRadius: 'var(--radius-full)',
+                                objectFit: 'cover',
+                            }} referrerPolicy="no-referrer" />
+                        ) : (
+                            <div style={{
+                                width: 36, height: 36, borderRadius: 'var(--radius-full)',
+                                background: 'linear-gradient(135deg, var(--accent-primary), #6366F1)',
+                                color: '#fff', fontWeight: 700, fontSize: '0.875rem',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                                {user?.name?.charAt(0) || 'U'}
+                            </div>
+                        )}
                         <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Hi {user?.name} !</div>
                             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</div>

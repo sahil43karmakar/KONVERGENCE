@@ -88,7 +88,8 @@ export function AuthProvider({ children }) {
 
     /* ── Google OAuth ── */
     const loginWithGoogle = () => {
-        window.location.href = 'http://localhost:5000/api/auth/google';
+        const base = window.location.port === '5173' ? 'http://localhost:5000' : window.location.origin;
+        window.location.href = `${base}/api/auth/google`;
     };
 
     /* ── Logout ── */

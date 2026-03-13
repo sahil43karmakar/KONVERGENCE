@@ -21,6 +21,7 @@ const bookmarkRoutes = require('./routes/bookmarkRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const userRoutes = require('./routes/userRoutes');
+const chatRoutes = require('./routes/chatRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 // ── Connect to MongoDB ─────────────────────────
@@ -51,6 +52,7 @@ app.use('/api/bookmarks', bookmarkRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/chat', chatRoutes);
 
 // ── Serve Frontend ──────────────────────────────
 app.use(express.static(path.join(__dirname, '../frontend/job-frontend/dist')));
